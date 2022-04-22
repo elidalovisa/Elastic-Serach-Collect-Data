@@ -1,32 +1,35 @@
 import pkg from 'csvtojson'
 import uniqid from 'uniqid'
+import dotenv from 'dotenv'
+import { Client } from '@elastic/elasticsearch'
 
+dotenv.config()
 const { csv } = pkg
-let entries = []
-let count = 0
 
-// Code: https://nodogmablog.bryanhogan.net/2020/10/reading-csv-files-into-objects-with-node-js/
+let entries = []
+
+// Get data and create array with objects.
 const csvFilePath = './argentina.csv'
 csv().fromFile(csvFilePath)
-.then((jsonObj) => {
-    jsonObj.forEach((row) =>  { 
-        count++
-        row.id = uniqid()
-        entries.push(row)
+    .then((jsonObj) => {
+        jsonObj.forEach((row) => {
+            row.id = uniqid() // Give each obj a unique ID
+            entries.push(row)
+        })
+        console.log(jsonObj)
     })
-    console.log(jsonObj)
-})
-
-// End of code from above source
-
-
-// Loop/sort data -> Create objects in an array?
-
-// Each document needs to have a unique id -> Create an ID
 
 // Create index
-let musicData = ''
+let dataIndex = ''
 
 // Create Elastic client
+const client = new Client({
+    node: 'https://localhost:9200',
+    auth: {
+        username: 'elastic',
+        fingerprint: process.env.FINGERPRINT,
+        password: process.env.PASSWORD
+    }
+})
 
 // Save data to ElasticSearch (BulkAll --> read doc)
