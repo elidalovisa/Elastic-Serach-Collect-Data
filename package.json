@@ -1,0 +1,24 @@
+{
+  "name": "assignment-wt2-collect-data",
+  "version": "1.0.0",
+  "description": "Collecting data and save it to ElasticSearch",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "module",
+    "url": "git@gitlab.lnu.se:1dv027/student/es222vs/assignment-wt2/wt2-collect-data.git"
+  },
+  "author": "Elida Arrechea",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.1.0",
+    "express": "^4.17.3"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.0",
+    "nodemon": "^2.0.15"
+  }
+}
