@@ -7,6 +7,9 @@ dotenv.config()
 const { csv } = pkg
 
 let entries = []
+let date = new Date().toISOString().slice(0, 10)
+console.log(date)
+
 
 // Get data and create array with objects.
 const csvFilePath = './argentina.csv'
@@ -14,9 +17,10 @@ csv().fromFile(csvFilePath)
     .then((jsonObj) => {
         jsonObj.forEach((row) => {
             row.id = uniqid() // Give each obj a unique ID
+            row.TimeStamp = date
             entries.push(row)
         })
-      //  console.log(jsonObj)
+        //  console.log(jsonObj)
     })
 
 // Create Elastic client
@@ -29,7 +33,7 @@ const client = new Client({
     },
     tls: {
         rejectUnauthorized: false
-      }
+    }
 })
 /*
 try {
@@ -41,32 +45,36 @@ try {
 */
 // Create index
 async function createIndex() {
-   await client.indices.create({
-        index: 'argentinadataTest',
+    await client.indices.create({
+        index: 'test',
         operations: {
             mappings: {
-              properties: {
-                province: { type: 'text' },
-                gdp: { type: 'integer' },
-                illiteracy: { type: 'integer' },
-                poverty: { type: 'integer' },
-                deficient_infra: { type: 'integer'},
-                school_dropout: { type: 'integer' },
-                no_healthcare: { type: 'integer' },
-                birth_mortal: { type: 'integer '},
-                pop: { type: 'integer' },
-                movie_theatres_per_cap: { type: ' integer' },
-                doctors_per_cap: { type: 'integer' },
-                id: { type: 'key' },
-              }
+               /* source: {
+                    _timestamp: { type: 'TimeStamp'},
+                },*/
+                properties: {
+                    timestamp: { type: 'date'},
+                    province: { type: 'text' },
+                    gdp: { type: 'integer' },
+                    illiteracy: { type: 'integer' },
+                    poverty: { type: 'integer' },
+                    deficient_infra: { type: 'integer' },
+                    school_dropout: { type: 'integer' },
+                    no_healthcare: { type: 'integer' },
+                    birth_mortal: { type: 'integer ' },
+                    pop: { type: 'integer' },
+                    movie_theatres_per_cap: { type: ' integer' },
+                    doctors_per_cap: { type: 'integer' },
+                    id: { type: 'key' },
+                }
             }
-          }
-        }, { ignore: [400] })
-    
+        }
+    }, { ignore: [400] })
 
-    const operations = entries.flatMap(doc => [{ index: { _index: 'argentinadata' } }, doc])
-    const bulkResponse = await client.bulk({ refresh: true, operations})
-console.log(bulkResponse.items[1])
+
+    const operations = entries.flatMap(doc => [{ index: { _index: 'test' } }, doc])
+    const bulkResponse = await client.bulk({ refresh: true, operations })
+   // console.log(bulkResponse.items[1])
 }
 
 createIndex()
