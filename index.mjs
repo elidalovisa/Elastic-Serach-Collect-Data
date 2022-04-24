@@ -8,8 +8,6 @@ const { csv } = pkg
 
 let entries = []
 let date = new Date().toISOString().slice(0, 10)
-console.log(date)
-
 
 // Get data and create array with objects.
 const csvFilePath = './argentina.csv'
@@ -17,10 +15,9 @@ csv().fromFile(csvFilePath)
     .then((jsonObj) => {
         jsonObj.forEach((row) => {
             row.id = uniqid() // Give each obj a unique ID
-            row.TimeStamp = date
+            row.TimeStamp = date // Add timestamp
             entries.push(row)
         })
-        //  console.log(jsonObj)
     })
 
 // Create Elastic client
@@ -35,23 +32,13 @@ const client = new Client({
         rejectUnauthorized: false
     }
 })
-/*
-try {
-    let result = await client.info()
-    console.log(result)
-} catch (error) {
-    console.log(error)
-}
-*/
+
 // Create index
 async function createIndex() {
     await client.indices.create({
-        index: 'test',
+        index: 'argentinadata',
         operations: {
             mappings: {
-               /* source: {
-                    _timestamp: { type: 'TimeStamp'},
-                },*/
                 properties: {
                     timestamp: { type: 'date'},
                     province: { type: 'text' },
@@ -72,11 +59,8 @@ async function createIndex() {
     }, { ignore: [400] })
 
 
-    const operations = entries.flatMap(doc => [{ index: { _index: 'test' } }, doc])
+    const operations = entries.flatMap(doc => [{ index: { _index: 'argentinadata' } }, doc])
     const bulkResponse = await client.bulk({ refresh: true, operations })
-   // console.log(bulkResponse.items[1])
 }
 
 createIndex()
-
-// Save data to ElasticSearch (BulkAll --> read doc)
