@@ -1,9 +1,7 @@
 import pkg from 'csvtojson'
 import uniqid from 'uniqid'
-import dotenv from 'dotenv'
 import { Client } from '@elastic/elasticsearch'
 
-dotenv.config()
 const { csv } = pkg
 /**
  * Encapsulates a controller.
