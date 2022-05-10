@@ -36,7 +36,7 @@ const client = new Client({
 // Create index
 async function createIndex() {
     await client.indices.create({
-        index: 'argentinadata',
+        index: 'argentina',
         operations: {
             mappings: {
                 properties: {
@@ -59,8 +59,9 @@ async function createIndex() {
     }, { ignore: [400] })
 
 
-    const operations = entries.flatMap(doc => [{ index: { _index: 'argentinadata' } }, doc])
+    const operations = entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
     const bulkResponse = await client.bulk({ refresh: true, operations })
+    console.log(bulkResponse)
 }
 
 createIndex()
