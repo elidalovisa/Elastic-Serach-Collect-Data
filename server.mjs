@@ -1,6 +1,5 @@
 import express from 'express'
 import helmet from 'helmet'
-import dotenv from 'dotenv'
 import logger from 'morgan'
 import { router } from './routes/router.mjs'
 

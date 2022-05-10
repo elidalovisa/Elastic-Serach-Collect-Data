@@ -5,42 +5,52 @@ import { Client } from '@elastic/elasticsearch'
 
 dotenv.config()
 const { csv } = pkg
+/**
+ * Encapsulates a controller.
+ */
+export class Controller {
+    constructor() {
+        this.client
+        this.entries = []
 
-let entries = []
-let date = new Date().toISOString().slice(0, 10)
-
-// Get data and create array with objects.
-const csvFilePath = './argentina.csv'
-csv().fromFile(csvFilePath)
-    .then((jsonObj) => {
-        jsonObj.forEach((row) => {
-            row.id = uniqid() // Give each obj a unique ID
-            row.TimeStamp = date // Add timestamp
-            entries.push(row)
-        })
-    })
-
-// Create Elastic client
-const client = new Client({
-    node: 'https://localhost:9200',
-    auth: {
-        username: 'elastic',
-        fingerprint: process.env.FINGERPRINT,
-        password: process.env.PASSWORD
-    },
-    tls: {
-        rejectUnauthorized: false
     }
-})
+
+    async connectClient() {
+        let date = new Date().toISOString().slice(0, 10)
+
+        // Get data and create array with objects.
+        const csvFilePath = './argentina.csv'
+        csv().fromFile(csvFilePath)
+            .then((jsonObj) => {
+                jsonObj.forEach((row) => {
+                    row.id = uniqid() // Give each obj a unique ID
+                    row.TimeStamp = date // Add timestamp
+                    this.entries.push(row)
+                })
+            })
+
+        // Create Elastic client
+        this.client = new Client({
+            node: 'https://localhost:9200',
+            auth: {
+                username: 'elastic',
+                fingerprint: process.env.FINGERPRINT,
+                password: process.env.PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        })
+    }
 
 // Create index
-async function createIndex() {
-    await client.indices.create({
+async createIndex() {
+    await this.client.indices.create({
         index: 'argentina',
         operations: {
             mappings: {
                 properties: {
-                    timestamp: { type: 'date'},
+                    timestamp: { type: 'date' },
                     province: { type: 'text' },
                     gdp: { type: 'integer' },
                     illiteracy: { type: 'integer' },
@@ -59,9 +69,16 @@ async function createIndex() {
     }, { ignore: [400] })
 
 
-    const operations = entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
-    const bulkResponse = await client.bulk({ refresh: true, operations })
-    console.log(bulkResponse)
+    const operations = this.entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
+    const bulkResponse = await this.client.bulk({ refresh: true, operations })
+    return bulkResponse
 }
 
-createIndex()
+async go(req, res, next) {
+    this.connectClient()
+    const response = await this.createIndex()
+    console.log(response)
+    res.send(response)
+}
+ }
+//createIndex()
