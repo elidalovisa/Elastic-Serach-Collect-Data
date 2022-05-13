@@ -1,6 +1,5 @@
 import pkg from 'csvtojson'
 import uniqid from 'uniqid'
-import { Client } from '@elastic/elasticsearch'
 import elasticsearch from 'elasticsearch'
 
 const { csv } = pkg
@@ -44,44 +43,50 @@ export class Controller {
         })
     }
 
-    // Create index
+    // Check if index exist if not create index
     async createIndex() {
-        const responseIndex = await this.client.indices.create({
-            index: 'argentina',
-            body: {
-                mappings: {
-                    properties: {
-                        timestamp: { type: 'date' },
-                        province: { type: 'text' },
-                        gdp: { type: 'text' },
-                        illiteracy: { type: 'text' },
-                        poverty: { type: 'text' },
-                        deficient_infra: { type: 'text' },
-                        school_dropout: { type: 'text' },
-                        no_healthcare: { type: 'text' },
-                        birth_mortal: { type: 'text' },
-                        pop: { type: 'text' },
-                        movie_theatres_per_cap: { type: 'text' },
-                        doctors_per_cap: { type: 'text' },
-                        id: { type: 'text' },
+        const exist = await this.client.indices.exists({
+            index: 'argentina'
+        })
+        if (exist) {
+            const operations = this.entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
+            const bulkResponse = await this.client.bulk({ body: operations })
+
+            return bulkResponse
+        } else {
+            await this.client.indices.create({
+                index: 'argentina',
+                body: {
+                    mappings: {
+                        properties: {
+                            timestamp: { type: 'date' },
+                            province: { type: 'text' },
+                            gdp: { type: 'text' },
+                            illiteracy: { type: 'text' },
+                            poverty: { type: 'text' },
+                            deficient_infra: { type: 'text' },
+                            school_dropout: { type: 'text' },
+                            no_healthcare: { type: 'text' },
+                            birth_mortal: { type: 'text' },
+                            pop: { type: 'text' },
+                            movie_theatres_per_cap: { type: 'text' },
+                            doctors_per_cap: { type: 'text' },
+                            id: { type: 'text' },
+                        }
                     }
                 }
-            }
-        }, { ignore: [400] })
-
-        console.log(responseIndex)
+            }, { ignore: [400] })
+        }
 
         const operations = this.entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
-        const bulkResponse = await this.client.bulk({body: operations})
-       
+        const bulkResponse = await this.client.bulk({ body: operations })
+
         return bulkResponse
     }
 
     async go(req, res, next) {
         this.connectClient()
         const response = await this.createIndex()
-       console.log(response)
-       //res.send(response)
+        res.send(response)
     }
 }
-//createIndex()
