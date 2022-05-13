@@ -1,6 +1,7 @@
 import pkg from 'csvtojson'
 import uniqid from 'uniqid'
 import { Client } from '@elastic/elasticsearch'
+import elasticsearch from 'elasticsearch'
 
 const { csv } = pkg
 /**
@@ -27,56 +28,58 @@ export class Controller {
                 })
             })
 
-        // Create Elastic client
-        this.client = new Client({
-            node: 'https://localhost:9200',
-            auth: {
-                username: 'elastic',
-                fingerprint: process.env.FINGERPRINT,
-                password: process.env.PASSWORD
-            },
-            tls: {
-                rejectUnauthorized: false
+        // Create Elastic client code from: https://docs.bonsai.io/article/103-node-js
+        const client = elasticsearch.Client({
+            host: process.env.BONSAI_URL
+        })
+
+        client.ping({
+            requestTimeout: 30000,
+        }, function (error) {
+            if (error) {
+                console.error('elasticsearch cluster is down!');
+            } else {
+                console.log('All is well');
             }
         })
     }
 
-// Create index
-async createIndex() {
-    await this.client.indices.create({
-        index: 'argentina',
-        operations: {
-            mappings: {
-                properties: {
-                    timestamp: { type: 'date' },
-                    province: { type: 'text' },
-                    gdp: { type: 'integer' },
-                    illiteracy: { type: 'integer' },
-                    poverty: { type: 'integer' },
-                    deficient_infra: { type: 'integer' },
-                    school_dropout: { type: 'integer' },
-                    no_healthcare: { type: 'integer' },
-                    birth_mortal: { type: 'integer ' },
-                    pop: { type: 'integer' },
-                    movie_theatres_per_cap: { type: ' integer' },
-                    doctors_per_cap: { type: 'integer' },
-                    id: { type: 'key' },
+    // Create index
+    async createIndex() {
+        await this.client.indices.create({
+            index: 'argentina',
+            operations: {
+                mappings: {
+                    properties: {
+                        timestamp: { type: 'date' },
+                        province: { type: 'text' },
+                        gdp: { type: 'integer' },
+                        illiteracy: { type: 'integer' },
+                        poverty: { type: 'integer' },
+                        deficient_infra: { type: 'integer' },
+                        school_dropout: { type: 'integer' },
+                        no_healthcare: { type: 'integer' },
+                        birth_mortal: { type: 'integer ' },
+                        pop: { type: 'integer' },
+                        movie_theatres_per_cap: { type: ' integer' },
+                        doctors_per_cap: { type: 'integer' },
+                        id: { type: 'key' },
+                    }
                 }
             }
-        }
-    }, { ignore: [400] })
+        }, { ignore: [400] })
 
 
-    const operations = this.entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
-    const bulkResponse = await this.client.bulk({ refresh: true, operations })
-    return bulkResponse
+        const operations = this.entries.flatMap(doc => [{ index: { _index: 'argentina' } }, doc])
+        const bulkResponse = await this.client.bulk({ refresh: true, operations })
+        return bulkResponse
+    }
+
+    async go(req, res, next) {
+        this.connectClient()
+        const response = await this.createIndex()
+        console.log(response)
+        res.send(response)
+    }
 }
-
-async go(req, res, next) {
-    this.connectClient()
-    const response = await this.createIndex()
-    console.log(response)
-    res.send(response)
-}
- }
 //createIndex()
